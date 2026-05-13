@@ -1,37 +1,54 @@
 {
   "expo": {
-    "name": "CostosApp",
+    "name": "Vera",
     "slug": "CostosApp",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/vera-logos/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/icon.png",
+      "image": "./assets/vera-logos/vera_logo_transparent.png",
       "resizeMode": "contain",
-      "backgroundColor": "#F05B53"
+      "backgroundColor": "#0D1B2A"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSSpeechRecognitionUsageDescription": "Permitir que Vera reconozca tu voz para registrar deudas.",
+        "NSMicrophoneUsageDescription": "Permitir que Vera use el micrófono para registrar deudas por voz."
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icon.png",
-        "backgroundColor": "#F05B53"
+        "foregroundImage": "./assets/vera-logos/adaptive-icon.png",
+        "backgroundColor": "#0D1B2A"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "softwareKeyboardLayoutMode": "pan",
-      "package": "com.riselai.CostosApp"
+      "package": "com.riselai.vera",
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/vera-logos/favicon.png"
     },
+    "plugins": [
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Permitir que Vera use el micrófono para registrar deudas por voz.",
+          "speechRecognitionPermission": "Permitir que Vera reconozca tu voz para registrar deudas."
+        }
+      ]
+    ],
     "extra": {
       "eas": {
         "projectId": "7e0ca5b5-9553-41b3-a2fa-ab27f41dbb80"
       }
-    }
+    },
+    "owner": "riselai"
   }
 }

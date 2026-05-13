@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { useTheme, Theme } from '../context/ThemeContext';
 
 interface Props {
   visible: boolean;
@@ -11,13 +12,11 @@ interface Props {
 }
 
 export function ConfirmModal({
-  visible,
-  title,
-  message,
-  confirmLabel = 'Eliminar',
-  onConfirm,
-  onCancel,
+  visible, title, message, confirmLabel = 'Eliminar', onConfirm, onCancel,
 }: Props) {
+  const { theme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
   return (
     <Modal visible={visible} animationType="fade" transparent presentationStyle="overFullScreen">
       <View style={styles.overlay}>
@@ -38,65 +37,64 @@ export function ConfirmModal({
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 32,
-  },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 24,
-    width: '100%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    elevation: 10,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1A1A2E',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  message: {
-    fontSize: 14,
-    color: '#8E8E93',
-    textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 24,
-  },
-  buttons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  cancelBtn: {
-    flex: 1,
-    backgroundColor: '#F5F5F5',
-    borderRadius: 14,
-    padding: 15,
-    alignItems: 'center',
-  },
-  cancelText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#8E8E93',
-  },
-  confirmBtn: {
-    flex: 1,
-    backgroundColor: '#F05B53',
-    borderRadius: 14,
-    padding: 15,
-    alignItems: 'center',
-  },
-  confirmText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-});
+function createStyles(t: Theme) {
+  return StyleSheet.create({
+    overlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.45)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 32,
+    },
+    card: {
+      backgroundColor: t.card,
+      borderRadius: 20,
+      padding: 24,
+      width: '100%',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.15,
+      shadowRadius: 20,
+      elevation: 10,
+    },
+    title: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: t.text,
+      textAlign: 'center',
+      marginBottom: 8,
+    },
+    message: {
+      fontSize: 14,
+      color: t.subtext,
+      textAlign: 'center',
+      lineHeight: 20,
+      marginBottom: 24,
+    },
+    buttons: { flexDirection: 'row', gap: 12 },
+    cancelBtn: {
+      flex: 1,
+      backgroundColor: t.isDark ? t.bg : '#F5F5F5',
+      borderRadius: 14,
+      padding: 15,
+      alignItems: 'center',
+    },
+    cancelText: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: t.subtext,
+    },
+    confirmBtn: {
+      flex: 1,
+      backgroundColor: '#F05B53',
+      borderRadius: 14,
+      padding: 15,
+      alignItems: 'center',
+    },
+    confirmText: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: '#FFFFFF',
+    },
+  });
+}

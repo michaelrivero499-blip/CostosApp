@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Debt, DebtStatus } from '../types';
 import { STATUS_COLORS } from '../utils';
+import { useTheme, Theme } from '../context/ThemeContext';
 
 interface Props {
   visible: boolean;
@@ -16,6 +17,9 @@ const OPTIONS: { status: DebtStatus; label: string; emoji: string; description: 
 ];
 
 export function StatusPickerModal({ visible, debt, onSelect, onClose }: Props) {
+  const { theme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
   if (!debt) return null;
 
   return (
@@ -56,91 +60,89 @@ export function StatusPickerModal({ visible, debt, onSelect, onClose }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'flex-end',
-  },
-  sheet: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 20,
-    paddingBottom: 40,
-  },
-  handle: {
-    width: 36,
-    height: 4,
-    backgroundColor: '#E5E5EA',
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1A1A2E',
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 13,
-    color: '#8E8E93',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  option: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F8F8F8',
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 10,
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  optionSelected: {
-    backgroundColor: '#FFF5F5',
-    borderColor: '#F05B53',
-  },
-  indicator: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: 12,
-  },
-  optionContent: {
-    flex: 1,
-  },
-  optionLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#1A1A2E',
-    marginBottom: 1,
-  },
-  optionLabelSelected: {
-    color: '#F05B53',
-  },
-  optionDesc: {
-    fontSize: 12,
-    color: '#8E8E93',
-  },
-  checkmark: {
-    fontSize: 16,
-    color: '#F05B53',
-    fontWeight: '700',
-  },
-  cancelBtn: {
-    marginTop: 4,
-    backgroundColor: '#F5F5F5',
-    borderRadius: 14,
-    padding: 16,
-    alignItems: 'center',
-  },
-  cancelText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#8E8E93',
-  },
-});
+function createStyles(t: Theme) {
+  return StyleSheet.create({
+    overlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.4)',
+      justifyContent: 'flex-end',
+    },
+    sheet: {
+      backgroundColor: t.card,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      padding: 20,
+      paddingBottom: 40,
+    },
+    handle: {
+      width: 36,
+      height: 4,
+      backgroundColor: t.border,
+      borderRadius: 2,
+      alignSelf: 'center',
+      marginBottom: 16,
+    },
+    title: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: t.text,
+      textAlign: 'center',
+      marginBottom: 4,
+    },
+    subtitle: {
+      fontSize: 13,
+      color: t.subtext,
+      textAlign: 'center',
+      marginBottom: 20,
+    },
+    option: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: t.isDark ? t.bg : '#F8F8F8',
+      borderRadius: 14,
+      padding: 14,
+      marginBottom: 10,
+      borderWidth: 2,
+      borderColor: 'transparent',
+    },
+    optionSelected: {
+      backgroundColor: t.isDark ? '#2A1520' : '#FFF5F5',
+      borderColor: '#F05B53',
+    },
+    indicator: {
+      width: 12,
+      height: 12,
+      borderRadius: 6,
+      marginRight: 12,
+    },
+    optionContent: { flex: 1 },
+    optionLabel: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: t.text,
+      marginBottom: 1,
+    },
+    optionLabelSelected: { color: '#F05B53' },
+    optionDesc: {
+      fontSize: 12,
+      color: t.subtext,
+    },
+    checkmark: {
+      fontSize: 16,
+      color: '#F05B53',
+      fontWeight: '700',
+    },
+    cancelBtn: {
+      marginTop: 4,
+      backgroundColor: t.isDark ? t.bg : '#F5F5F5',
+      borderRadius: 14,
+      padding: 16,
+      alignItems: 'center',
+    },
+    cancelText: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: t.subtext,
+    },
+  });
+}

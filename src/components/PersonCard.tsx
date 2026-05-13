@@ -1,7 +1,11 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useMemo } from 'react';
 import { Animated, StyleSheet, Text, TouchableOpacity, View, Easing } from 'react-native';
 import { Person, Debt } from '../types';
-import { getPersonStatus, getPersonTotal, formatAmount, STATUS_COLORS, DIRECTION_COLORS } from '../utils';
+import { useTheme, Theme } from '../context/ThemeContext';
+import {
+  getPersonStatus, getPersonNetByCurrency,
+  formatAmountCurrency, STATUS_COLORS, DIRECTION_COLORS,
+} from '../utils';
 
 interface Props {
   person: Person;
@@ -13,36 +17,40 @@ interface Props {
 }
 
 export function PersonCard({ person, debts, onPress, isNew, isExiting, onExitComplete }: Props) {
-  const total = getPersonTotal(debts);
+  const { theme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
   const status = getPersonStatus(debts);
   const activeCount = debts.filter(d => d.status === 'pendiente').length;
 
-  const amountColor = total > 0 ? DIRECTION_COLORS.me_debe
-    : total < 0 ? DIRECTION_COLORS.le_debo
-    : '#1A1A2E';
-  const statusLabel = total > 0 ? 'me debe'
-    : total < 0 ? 'le debo'
-    : debts.length > 0 ? 'pagado' : '';
-  const statusColor = total !== 0 ? amountColor : STATUS_COLORS[status];
+  const currencyNets = getPersonNetByCurrency(debts);
+  const primaryNet   = currencyNets[0] ?? null;
+  const extraCount   = currencyNets.length - 1;
 
-  const opacity = useRef(new Animated.Value(isNew ? 0 : 1)).current;
-  const scale = useRef(new Animated.Value(isNew ? 0.95 : 1)).current;
+  const amountColor = !primaryNet ? theme.text
+    : primaryNet.net > 0 ? DIRECTION_COLORS.me_debe
+    : DIRECTION_COLORS.le_debo;
+
+  const statusLabel = !primaryNet
+    ? (debts.length > 0 ? 'al día' : '')
+    : primaryNet.net > 0 ? 'me debe' : 'le debo';
+
+  const statusColor = primaryNet ? amountColor : STATUS_COLORS[status];
+
+  const opacity    = useRef(new Animated.Value(isNew ? 0 : 1)).current;
+  const scale      = useRef(new Animated.Value(isNew ? 0.95 : 1)).current;
   const translateX = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (isNew) {
       Animated.parallel([
         Animated.timing(opacity, {
-          toValue: 1,
-          duration: 250,
-          easing: Easing.out(Easing.ease),
-          useNativeDriver: true,
+          toValue: 1, duration: 250,
+          easing: Easing.out(Easing.ease), useNativeDriver: true,
         }),
         Animated.timing(scale, {
-          toValue: 1,
-          duration: 250,
-          easing: Easing.out(Easing.ease),
-          useNativeDriver: true,
+          toValue: 1, duration: 250,
+          easing: Easing.out(Easing.ease), useNativeDriver: true,
         }),
       ]).start();
     }
@@ -52,16 +60,12 @@ export function PersonCard({ person, debts, onPress, isNew, isExiting, onExitCom
     if (isExiting) {
       Animated.parallel([
         Animated.timing(opacity, {
-          toValue: 0,
-          duration: 250,
-          easing: Easing.in(Easing.ease),
-          useNativeDriver: true,
+          toValue: 0, duration: 250,
+          easing: Easing.in(Easing.ease), useNativeDriver: true,
         }),
         Animated.timing(translateX, {
-          toValue: -60,
-          duration: 250,
-          easing: Easing.in(Easing.ease),
-          useNativeDriver: true,
+          toValue: -60, duration: 250,
+          easing: Easing.in(Easing.ease), useNativeDriver: true,
         }),
       ]).start(() => onExitComplete?.());
     }
@@ -80,7 +84,18 @@ export function PersonCard({ person, debts, onPress, isNew, isExiting, onExitCom
           </Text>
         </View>
         <View style={styles.right}>
-          <Text style={[styles.amount, { color: amountColor }]}>{formatAmount(total)}</Text>
+          <View style={styles.amountRow}>
+            <Text style={[styles.amount, { color: amountColor }]}>
+              {primaryNet
+                ? formatAmountCurrency(Math.abs(primaryNet.net), primaryNet.currency)
+                : formatAmountCurrency(0)}
+            </Text>
+            {extraCount > 0 && (
+              <View style={styles.extraBadge}>
+                <Text style={styles.extraBadgeText}>+{extraCount}</Text>
+              </View>
+            )}
+          </View>
           {statusLabel ? (
             <Text style={[styles.status, { color: statusColor }]}>{statusLabel}</Text>
           ) : null}
@@ -90,56 +105,65 @@ export function PersonCard({ person, debts, onPress, isNew, isExiting, onExitCom
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 14,
-    marginHorizontal: 16,
-    marginBottom: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  avatar: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  avatarEmoji: {
-    fontSize: 22,
-  },
-  info: {
-    flex: 1,
-  },
-  name: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1A1A2E',
-    marginBottom: 2,
-  },
-  debtsCount: {
-    fontSize: 12,
-    color: '#8E8E93',
-  },
-  right: {
-    alignItems: 'flex-end',
-  },
-  amount: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1A1A2E',
-    marginBottom: 2,
-  },
-  status: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-});
+function createStyles(t: Theme) {
+  return StyleSheet.create({
+    card: {
+      backgroundColor: t.card,
+      borderRadius: 12,
+      padding: 14,
+      marginHorizontal: 16,
+      marginBottom: 8,
+      flexDirection: 'row',
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.05,
+      shadowRadius: 4,
+      elevation: 2,
+    },
+    avatar: {
+      width: 46,
+      height: 46,
+      borderRadius: 23,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 12,
+    },
+    avatarEmoji: { fontSize: 22 },
+    info: { flex: 1 },
+    name: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: t.text,
+      marginBottom: 2,
+    },
+    debtsCount: {
+      fontSize: 12,
+      color: t.subtext,
+    },
+    right: { alignItems: 'flex-end' },
+    amountRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+      marginBottom: 2,
+    },
+    amount: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: t.text,
+    },
+    extraBadge: {
+      backgroundColor: t.border,
+      borderRadius: 8,
+      paddingHorizontal: 5,
+      paddingVertical: 2,
+    },
+    extraBadgeText: {
+      fontSize: 10,
+      fontWeight: '700',
+      color: t.subtext,
+    },
+    status: { fontSize: 12, fontWeight: '500' },
+  });
+}

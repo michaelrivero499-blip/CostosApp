@@ -1,7 +1,7 @@
 # Current State — Vera App
 
 ## Última actualización
-2026-05-12
+2026-05-12 (sesión 2)
 
 ---
 
@@ -22,28 +22,16 @@
 - Splash animado con logo Vera
 - Dependencia circular CostosContext ↔ Toast resuelta — Toast vive en App.tsx
 - Todos los console.log eliminados — proyecto limpio para producción
-- **Editar deuda** — EN PROGRESO (interrumpido por límite de Claude Code)
+- **Editar deuda** — toque largo en cualquier deuda abre AddDebtModal en modo edición
 
 ---
-
-## En progreso 🔄
-
-### Editar deuda existente
-**Estado:** Claude Code había comenzado la implementación. Completó:
-- Análisis del approach (reusar AddDebtModal con prop `initialValues`)
-- Inicio de cambios en PersonDetailScreen.tsx (import DebtDirection agregado)
-
-**Falta completar:**
-1. `AddDebtModal.tsx` — agregar prop opcional `initialValues?: { description, amount, direction, currency }`. useEffect([visible]) para seedear estado. Título/botón dinámicos: "Editar deuda"/"Guardar" vs "Nueva deuda"/"Agregar"
-2. `CostosContext.tsx` — agregar función `updateDebt(debtId, description, amount, direction, currency)` con patrón optimista igual a las otras mutaciones
-3. `PersonDetailScreen.tsx` — estado `editTarget: Debt | null`. Toque largo en deuda → `setEditTarget(debt)`. Modal en modo edición con `onSave={handleEditDebt}` que llama `updateDebt`
 
 ---
 
 ## Pendiente — Alta prioridad (antes de Play Store) 📋
 
 1. ~~Limpiar console.log~~ ✅
-2. **Editar deuda** — continuar implementación
+2. ~~**Editar deuda**~~ ✅
 3. **Fecha de vencimiento en deudas** — agregar campo `dueDate` al modelo Debt, campo en AddDebtModal, indicador visual en PersonDetailScreen
 4. **Foto de perfil por persona** — extender modelo Person para soportar imagen real además del emoji/color actual
 5. **Búsqueda de personas y deudas** — barra de búsqueda en HomeScreen
@@ -77,7 +65,4 @@ Ver `docs/known-bugs.md`
 
 ## Próxima sesión — continuar con
 
-Editar deuda existente (retomar implementación interrumpida).
-Prompt para Claude Code:
-
-> Continuá la implementación de editar deuda. El approach aprobado es reusar AddDebtModal con prop opcional initialValues. Falta: (1) modificar AddDebtModal.tsx para aceptar initialValues y mostrar título/botón dinámicos, (2) agregar updateDebt() en CostosContext.tsx con patrón optimista, (3) completar PersonDetailScreen.tsx con editTarget state y toque largo para abrir modal en modo edición.
+**Fecha de vencimiento en deudas** — agregar campo `dueDate` al modelo Debt, campo en AddDebtModal, indicador visual en PersonDetailScreen.

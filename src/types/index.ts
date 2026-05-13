@@ -1,5 +1,10 @@
 export type DebtStatus = 'pendiente' | 'pagado';
 export type DebtDirection = 'me_debe' | 'le_debo';
+export type Currency = 'ARS' | 'USD' | 'UYU' | 'BRL';
+
+export type PeriodFilter =
+  | { mode: 'total' }
+  | { mode: 'month'; year: number; month: number };
 
 export interface Person {
   id: string;
@@ -16,4 +21,6 @@ export interface Debt {
   status: DebtStatus;
   direction: DebtDirection;
   date: string;
+  paidDate?: string;
+  currency?: Currency;
 }

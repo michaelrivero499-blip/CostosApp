@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import Svg, { Rect, Text as SvgText, G } from 'react-native-svg';
 import { DebtDirection } from '../types';
 import { DIRECTION_COLORS, formatAmountShort, formatAmount } from '../utils';
+import { useTheme, Theme } from '../context/ThemeContext';
 
 interface DebtItem {
   description: string;
@@ -12,7 +13,7 @@ interface DebtItem {
 
 interface BarData {
   label: string;
-  value: number;       // absolute net
+  value: number;
   direction: DebtDirection;
   color: string;
   debts: DebtItem[];
@@ -24,9 +25,11 @@ interface Props {
 
 const CHART_HEIGHT = 140;
 const MAX_BAR_RATIO = 0.80;
-const LABEL_INSIDE_PX = 65; // if bar >= this px tall, show label inside in white
+const LABEL_INSIDE_PX = 65;
 
 export function BarChart({ data }: Props) {
+  const { theme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const { width } = useWindowDimensions();
   const chartWidth = width - 32;
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
@@ -67,21 +70,18 @@ export function BarChart({ data }: Props) {
 
           return (
             <G key={item.label + index} opacity={isDimmed ? 0.3 : 1}>
-              {/* Bar */}
               <Rect
                 x={x} y={y}
                 width={barWidth} height={barHeight}
                 fill={color} rx={6}
                 onPress={() => handleBarPress(index)}
               />
-              {/* Invisible tall touch target */}
               <Rect
                 x={x - 8} y={0}
                 width={barWidth + 16} height={CHART_HEIGHT + 20}
                 fill="transparent"
                 onPress={() => handleBarPress(index)}
               />
-              {/* Value label — inside bar if tall, above if short */}
               {item.value > 0 && (
                 showInside ? (
                   <SvgText
@@ -100,20 +100,19 @@ export function BarChart({ data }: Props) {
                     y={y - 6}
                     textAnchor="middle"
                     fontSize={11}
-                    fill={isSelected ? color : '#555'}
+                    fill={isSelected ? color : theme.subtext}
                     fontWeight="600"
                   >
                     {formatAmountShort(item.value)}
                   </SvgText>
                 )
               )}
-              {/* X-axis label */}
               <SvgText
                 x={labelX}
                 y={CHART_HEIGHT + 16}
                 textAnchor="middle"
                 fontSize={12}
-                fill={isSelected ? '#1A1A2E' : '#8E8E93'}
+                fill={isSelected ? theme.text : theme.subtext}
                 fontWeight={isSelected ? '700' : '400'}
               >
                 {item.label}
@@ -123,7 +122,6 @@ export function BarChart({ data }: Props) {
         })}
       </Svg>
 
-      {/* Breakdown panel */}
       {selected !== null && (
         <View style={styles.breakdown}>
           <View style={styles.breakdownHeader}>
@@ -159,7 +157,6 @@ export function BarChart({ data }: Props) {
         </View>
       )}
 
-      {/* Legend */}
       <View style={styles.legend}>
         <View style={styles.legendItem}>
           <View style={[styles.dot, { backgroundColor: DIRECTION_COLORS.me_debe }]} />
@@ -174,126 +171,56 @@ export function BarChart({ data }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    marginHorizontal: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  title: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#1A1A2E',
-  },
-  period: {
-    fontSize: 12,
-    color: '#8E8E93',
-    backgroundColor: '#F5F5F5',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  breakdown: {
-    backgroundColor: '#F8F8F8',
-    borderRadius: 12,
-    padding: 12,
-    marginTop: 4,
-    marginBottom: 12,
-  },
-  breakdownHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  breakdownDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginRight: 8,
-  },
-  breakdownName: {
-    flex: 1,
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#1A1A2E',
-  },
-  breakdownClose: {
-    fontSize: 14,
-    color: '#8E8E93',
-    paddingLeft: 8,
-  },
-  breakdownRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-    gap: 6,
-  },
-  breakdownArrow: {
-    fontSize: 14,
-    fontWeight: '700',
-    width: 16,
-  },
-  breakdownDesc: {
-    flex: 1,
-    fontSize: 13,
-    color: '#3A3A3A',
-  },
-  breakdownAmt: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#1A1A2E',
-  },
-  breakdownEmpty: {
-    fontSize: 13,
-    color: '#8E8E93',
-    textAlign: 'center',
-    paddingVertical: 4,
-  },
-  breakdownDivider: {
-    height: 1,
-    backgroundColor: '#E5E5EA',
-    marginVertical: 8,
-  },
-  breakdownTotalLabel: {
-    flex: 1,
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#1A1A2E',
-  },
-  breakdownTotal: {
-    fontSize: 14,
-    fontWeight: '800',
-  },
-  legend: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 20,
-    marginTop: 8,
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  legendText: {
-    fontSize: 11,
-    color: '#8E8E93',
-  },
-});
+function createStyles(t: Theme) {
+  return StyleSheet.create({
+    container: {
+      backgroundColor: t.card,
+      borderRadius: 16,
+      padding: 16,
+      marginHorizontal: 16,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.05,
+      shadowRadius: 4,
+      elevation: 2,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    title: { fontSize: 15, fontWeight: '700', color: t.text },
+    period: {
+      fontSize: 12,
+      color: t.subtext,
+      backgroundColor: t.isDark ? t.bg : '#F5F5F5',
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 8,
+    },
+    breakdown: {
+      backgroundColor: t.isDark ? t.bg : '#F8F8F8',
+      borderRadius: 12,
+      padding: 12,
+      marginTop: 4,
+      marginBottom: 12,
+    },
+    breakdownHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
+    breakdownDot: { width: 10, height: 10, borderRadius: 5, marginRight: 8 },
+    breakdownName: { flex: 1, fontSize: 14, fontWeight: '700', color: t.text },
+    breakdownClose: { fontSize: 14, color: t.subtext, paddingLeft: 8 },
+    breakdownRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6, gap: 6 },
+    breakdownArrow: { fontSize: 14, fontWeight: '700', width: 16 },
+    breakdownDesc: { flex: 1, fontSize: 13, color: t.subtext },
+    breakdownAmt: { fontSize: 13, fontWeight: '600', color: t.text },
+    breakdownEmpty: { fontSize: 13, color: t.subtext, textAlign: 'center', paddingVertical: 4 },
+    breakdownDivider: { height: 1, backgroundColor: t.border, marginVertical: 8 },
+    breakdownTotalLabel: { flex: 1, fontSize: 13, fontWeight: '700', color: t.text },
+    breakdownTotal: { fontSize: 14, fontWeight: '800' },
+    legend: { flexDirection: 'row', justifyContent: 'center', gap: 20, marginTop: 8 },
+    legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+    dot: { width: 8, height: 8, borderRadius: 4 },
+    legendText: { fontSize: 11, color: t.subtext },
+  });
+}

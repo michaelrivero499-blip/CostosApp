@@ -8,7 +8,17 @@
       "PowerShell(Test-Path *)",
       "PowerShell($env:JAVA_HOME = \"C:\\\\Program Files\\\\Java\\\\jdk-17.0.1\"; $env:ANDROID_HOME = \"$env:LOCALAPPDATA\\\\Android\\\\Sdk\"; cd \"C:\\\\Users\\\\micha\\\\Desktop\\\\Proyectos\\\\CostosApp\"; npx expo run:android 2>&1)",
       "PowerShell(& \"$env:LOCALAPPDATA\\\\Android\\\\Sdk\\\\platform-tools\\\\adb.exe\" uninstall com.riselai.CostosApp)",
-      "PowerShell($env:JAVA_HOME = \"C:\\\\Program Files\\\\Java\\\\jdk-17.0.1\"; $env:ANDROID_HOME = \"C:\\\\Users\\\\micha\\\\AppData\\\\Local\\\\Android\\\\Sdk\"; Set-Location \"C:\\\\Users\\\\micha\\\\Desktop\\\\Proyectos\\\\CostosApp\"; npx expo run:android 2>&1)"
+      "PowerShell($env:JAVA_HOME = \"C:\\\\Program Files\\\\Java\\\\jdk-17.0.1\"; $env:ANDROID_HOME = \"C:\\\\Users\\\\micha\\\\AppData\\\\Local\\\\Android\\\\Sdk\"; Set-Location \"C:\\\\Users\\\\micha\\\\Desktop\\\\Proyectos\\\\CostosApp\"; npx expo run:android 2>&1)",
+      "Bash(node -e \"const p = require\\('./package.json'\\); console.log\\(p.dependencies['expo-splash-screen']\\)\")",
+      "Bash(node -e \"const p = require\\('./package.json'\\); console.log\\(JSON.stringify\\({deps: Object.keys\\(p.dependencies\\), devDeps: Object.keys\\(p.devDependencies || {}\\)}, null, 2\\)\\)\")",
+      "Bash(dir *)",
+      "Bash(xargs grep -l \"iconBackground\\\\|splashscreen_background\")",
+      "Bash(xargs cat)",
+      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\(p.dependencies['lucide-react-native']||'NOT INSTALLED'\\)\")",
+      "Bash(node *)",
+      "Bash(java *)",
+      "Bash(where java *)",
+      "Bash(findstr /i \"jdk\")"
     ]
   }
 }
