@@ -28,7 +28,7 @@ export async function interpretDebt(
   transcript: string,
   knownPersonName?: string,
 ): Promise<InterpretedDebt> {
-  const apiKey = process.env.EXPO_PUBLIC_CLAUDE_API_KEY ?? Constants.expoConfig?.extra?.claudeApiKey;
+  const apiKey = Constants.expoConfig?.extra?.claudeApiKey as string;
   if (!apiKey) throw new Error('EXPO_PUBLIC_CLAUDE_API_KEY not set');
 
   const userContent = knownPersonName
