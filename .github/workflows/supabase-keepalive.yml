@@ -1,0 +1,70 @@
+name: Supabase keep-alive
+
+# Los proyectos free de Supabase se pausan tras 7 dias sin actividad de base
+# de datos. Este workflow hace un query real contra PostgREST todos los dias
+# para que eso no vuelva a pasar.
+#
+# Requiere dos secrets en el repo (Settings > Secrets and variables > Actions):
+#   SUPABASE_URL              -> https://xxxxx.supabase.co
+#   SUPABASE_PUBLISHABLE_KEY  -> sb_publishable_...
+
+on:
+  schedule:
+    # 09:17 UTC todos los dias. Minuto no-redondo a proposito: los crons en
+    # :00 se encolan detras de medio GitHub y a veces se saltean.
+    - cron: '17 9 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Query contra la base
+        run: |
+          code=$(curl -sS -o /tmp/resp.txt -w "%{http_code}" \
+            -H "apikey: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}" \
+            "${{ secrets.SUPABASE_URL }}/rest/v1/persons?select=id&limit=1")
+
+          echo "HTTP $code"
+          head -c 300 /tmp/resp.txt
+
+          if [ "$code" != "200" ]; then
+            echo "::error::Supabase respondio $code. Puede que el proyecto este pausado o la key sea invalida."
+            exit 1
+          fi
+          echo "Base despierta."
+
+  # GitHub deshabilita los workflows programados tras 60 dias sin actividad en
+  # el repo (los runs del propio cron NO cuentan como actividad). Si eso pasa,
+  # el keep-alive muere y Supabase se pausa una semana despues: exactamente el
+  # problema que estamos resolviendo. Este job commitea un timestamp cuando el
+  # ultimo commit ya tiene mas de 45 dias, y solo entonces.
+  mantener-repo-activo:
+    runs-on: ubuntu-latest
+    needs: ping
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Commitear timestamp si el repo lleva 45+ dias quieto
+        run: |
+          ultimo=$(git log -1 --format=%ct)
+          ahora=$(date +%s)
+          dias=$(( (ahora - ultimo) / 86400 ))
+          echo "Ultimo commit hace $dias dias."
+
+          if [ "$dias" -lt 45 ]; then
+            echo "Repo activo, no hace falta commitear."
+            exit 0
+          fi
+
+          mkdir -p .github
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > .github/last-keepalive.txt
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/last-keepalive.txt
+          git commit -m "chore: keep-alive [skip ci]"
+          git push

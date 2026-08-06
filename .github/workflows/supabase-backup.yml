@@ -1,0 +1,69 @@
+name: Supabase backup
+
+# El plan free de Supabase NO incluye backups. Este workflow hace un pg_dump
+# semanal y lo guarda como artifact de GitHub Actions con 90 dias de retencion.
+#
+# Los artifacts se borran solos al vencer, asi que no quedan datos personales
+# de tus usuarios versionados para siempre en un repo. Si alguna vez necesitas
+# uno: pestana Actions > el run > seccion Artifacts.
+#
+# Requiere un secret en el repo (Settings > Secrets and variables > Actions):
+#   SUPABASE_DB_URL -> connection string de la pooler de Supabase, con password
+#                      Dashboard > Connect > Session pooler
+#                      postgresql://postgres.xxxx:PASSWORD@aws-0-sa-east-1.pooler.supabase.com:5432/postgres
+
+on:
+  schedule:
+    # Domingos 04:23 UTC (madrugada del domingo en Argentina)
+    - cron: '23 4 * * 0'
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Instalar pg_dump 17
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -qq postgresql-client-17
+          pg_dump --version
+
+      - name: Dump de la base
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          stamp=$(date -u +"%Y-%m-%d")
+
+          # public  = persons, debts, transactions, budgets (los datos)
+          # auth    = las cuentas de usuario. Sin esto tendrias las deudas
+          #           pero nadie a quien pertenecen, y el backup no sirve.
+          pg_dump "$DB_URL" \
+            --schema=public \
+            --schema=auth \
+            --no-owner \
+            --no-privileges \
+            --format=custom \
+            --file="vera-backup-$stamp.dump"
+
+          ls -lh "vera-backup-$stamp.dump"
+
+          # Un dump sano de este proyecto no baja de unos pocos KB. Si sale
+          # practicamente vacio es que algo fallo en silencio, y un backup
+          # roto que parece exitoso es peor que no tener backup.
+          size=$(stat -c%s "vera-backup-$stamp.dump")
+          if [ "$size" -lt 2000 ]; then
+            echo "::error::El dump pesa $size bytes. Sospechosamente chico, revisar."
+            exit 1
+          fi
+
+          echo "STAMP=$stamp" >> "$GITHUB_ENV"
+
+      - name: Guardar como artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vera-backup-${{ env.STAMP }}
+          path: vera-backup-*.dump
+          retention-days: 90
+          if-no-files-found: error
