@@ -16,11 +16,26 @@ Cada bug incluye: descripción, estado, y contexto para reproducirlo.
 
 ---
 
+### BUG-005 — APK preview muestra "Invalid API key" al registrarse ✅
+**Resuelto:** 2026-05-19  
+**Descripción:** El APK generado con el perfil EAS `preview` fallaba al autenticarse con Supabase.  
+**Fix:** Doble fallback implementado en `src/services/supabase.ts` — si `Constants.expoConfig?.extra` llega undefined en algún build, las constantes `FALLBACK_URL` y `FALLBACK_KEY` garantizan que el cliente Supabase siempre se inicialice correctamente. El fallback ya existía en `app.config.js`; ahora también está en el punto de consumo.  
+**Impacto:** Resuelto — la anon key nunca será undefined en producción.
+
+---
+
 ### BUG-002 — handleAddDebt tiene tipo DebtStatus | any en la firma
 **Estado:** Pendiente  
 **Descripción:** En PersonDetailScreen.tsx, la función `handleAddDebt` tiene el tipo `DebtStatus | any` en lugar del tipo correcto `DebtDirection`.  
 **Impacto:** Bajo — no causa errores en runtime pero es un type safety issue.  
 **Fix:** Cambiar la firma para usar `DebtDirection` correctamente.
+
+---
+
+### BUG-006 — Persona nueva desaparece al guardar ✅
+**Resuelto:** 2026-05-14  
+**Causa raíz:** Dos bugs combinados: (1) stale closure en `updatePersonAvatar` usaba `setPersons(persons.map(...))` con `persons` viejo del closure, pisando la persona recién agregada. (2) el `useEffect` de carga inicial sobreescribía el estado optimista con `setPersons(fetchedPersons)` antes de que Supabase confirmara la inserción.  
+**Fix:** (1) Cambiar a forma funcional `setPersons(current => current.map(...))`. (2) Merge optimista en el fetch: preservar items locales que no están en la respuesta de Supabase.
 
 ---
 

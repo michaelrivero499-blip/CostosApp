@@ -1,6 +1,19 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '../services/supabase';
+import {
+  GoogleSignin,
+  isSuccessResponse,
+  isErrorWithCode,
+  statusCodes,
+} from '@react-native-google-signin/google-signin';
+
+// Web client ID from Google Cloud Console → APIs & Services → Credentials
+// (the "Aplicación web" client you created)
+GoogleSignin.configure({
+  webClientId: '914518414732-c1vdfcon3lcctpbk85bpr4ni5liplnkp.apps.googleusercontent.com',
+  scopes: ['profile', 'email'],
+});
 
 interface AuthContextType {
   session: Session | null;
@@ -8,6 +21,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<string | null>;
   signUp: (email: string, password: string) => Promise<string | null>;
   signOut: () => Promise<void>;
+  signInWithGoogle: () => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -50,10 +64,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function signOut() {
     await supabase.auth.signOut();
+    try { await GoogleSignin.signOut(); } catch (_) {}
+  }
+
+  async function signInWithGoogle(): Promise<string | null> {
+    try {
+      await GoogleSignin.hasPlayServices();
+      const response = await GoogleSignin.signIn();
+
+      if (isSuccessResponse(response)) {
+        const idToken = response.data.idToken;
+        if (!idToken) return 'No se pudo obtener el token de Google';
+
+        const { error } = await supabase.auth.signInWithIdToken({
+          provider: 'google',
+          token: idToken,
+        });
+        return error?.message ?? null;
+      }
+
+      return null; // usuario canceló
+    } catch (error) {
+      if (isErrorWithCode(error)) {
+        switch (error.code) {
+          case statusCodes.SIGN_IN_CANCELLED:
+            return null;
+          case statusCodes.IN_PROGRESS:
+            return null;
+          case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
+            return 'Google Play Services no está disponible';
+        }
+      }
+      return 'Error al conectar con Google';
+    }
   }
 
   return (
-    <AuthContext.Provider value={{ session, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ session, loading, signIn, signUp, signOut, signInWithGoogle }}>
       {children}
     </AuthContext.Provider>
   );

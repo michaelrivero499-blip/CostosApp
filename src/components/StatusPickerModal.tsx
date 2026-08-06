@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Modal, View, Text, TouchableOpacity, StyleSheet, TouchableWithoutFeedback } from 'react-native';
 import { Debt, DebtStatus } from '../types';
 import { STATUS_COLORS } from '../utils';
 import { useTheme, Theme } from '../context/ThemeContext';
@@ -8,6 +8,7 @@ interface Props {
   visible: boolean;
   debt: Debt | null;
   onSelect: (debtId: string, status: DebtStatus) => void;
+  onPartialPayment: (debt: Debt) => void;
   onClose: () => void;
 }
 
@@ -16,7 +17,7 @@ const OPTIONS: { status: DebtStatus; label: string; emoji: string; description: 
   { status: 'pagado',    label: 'Pagado',    emoji: '✅', description: 'Deuda saldada' },
 ];
 
-export function StatusPickerModal({ visible, debt, onSelect, onClose }: Props) {
+export function StatusPickerModal({ visible, debt, onSelect, onPartialPayment, onClose }: Props) {
   const { theme } = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
@@ -24,8 +25,10 @@ export function StatusPickerModal({ visible, debt, onSelect, onClose }: Props) {
 
   return (
     <Modal visible={visible} animationType="slide" transparent presentationStyle="overFullScreen">
-      <View style={styles.overlay}>
-        <View style={styles.sheet}>
+      <TouchableWithoutFeedback onPress={onClose}>
+        <View style={styles.overlay}>
+          <TouchableWithoutFeedback>
+            <View style={styles.sheet}>
           <View style={styles.handle} />
           <Text style={styles.title}>Estado de la deuda</Text>
           <Text style={styles.subtitle} numberOfLines={1}>{debt.description}</Text>
@@ -51,11 +54,27 @@ export function StatusPickerModal({ visible, debt, onSelect, onClose }: Props) {
             );
           })}
 
+          {debt.status === 'pendiente' && (
+            <TouchableOpacity
+              style={[styles.option, { marginTop: 4 }]}
+              onPress={() => { onClose(); onPartialPayment(debt); }}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.indicator, { backgroundColor: '#F59E0B' }]} />
+              <View style={styles.optionContent}>
+                <Text style={styles.optionLabel}>💰  Pago parcial</Text>
+                <Text style={styles.optionDesc}>Registrar un abono sin saldar toda la deuda</Text>
+              </View>
+            </TouchableOpacity>
+          )}
+
           <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
             <Text style={styles.cancelText}>Cancelar</Text>
           </TouchableOpacity>
+            </View>
+          </TouchableWithoutFeedback>
         </View>
-      </View>
+      </TouchableWithoutFeedback>
     </Modal>
   );
 }

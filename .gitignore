@@ -40,3 +40,7 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Claude Code — worktrees y config local de la máquina
+.claude/worktrees/
+.claude/settings.local.json

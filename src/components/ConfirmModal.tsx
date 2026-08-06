@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Modal, View, Text, TouchableOpacity, StyleSheet, TouchableWithoutFeedback } from 'react-native';
 import { useTheme, Theme } from '../context/ThemeContext';
 
 interface Props {
@@ -19,8 +19,10 @@ export function ConfirmModal({
 
   return (
     <Modal visible={visible} animationType="fade" transparent presentationStyle="overFullScreen">
-      <View style={styles.overlay}>
-        <View style={styles.card}>
+      <TouchableWithoutFeedback onPress={onCancel}>
+        <View style={styles.overlay}>
+          <TouchableWithoutFeedback>
+            <View style={styles.card}>
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.message}>{message}</Text>
           <View style={styles.buttons}>
@@ -31,8 +33,10 @@ export function ConfirmModal({
               <Text style={styles.confirmText}>{confirmLabel}</Text>
             </TouchableOpacity>
           </View>
+            </View>
+          </TouchableWithoutFeedback>
         </View>
-      </View>
+      </TouchableWithoutFeedback>
     </Modal>
   );
 }
@@ -86,7 +90,7 @@ function createStyles(t: Theme) {
     },
     confirmBtn: {
       flex: 1,
-      backgroundColor: '#F05B53',
+      backgroundColor: '#00C4A8',
       borderRadius: 14,
       padding: 15,
       alignItems: 'center',

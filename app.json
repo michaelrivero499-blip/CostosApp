@@ -5,8 +5,9 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/vera-logos/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "scheme": "com.riselai.vera",
     "splash": {
       "image": "./assets/vera-logos/vera_logo_transparent.png",
       "resizeMode": "contain",
@@ -28,8 +29,24 @@
       "predictiveBackGestureEnabled": false,
       "softwareKeyboardLayoutMode": "pan",
       "package": "com.riselai.vera",
+      "versionCode": 1,
+      "targetSdkVersion": 34,
       "permissions": [
         "android.permission.RECORD_AUDIO"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [
+            {
+              "scheme": "com.riselai.vera"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
       ]
     },
     "web": {
@@ -41,6 +58,16 @@
         {
           "microphonePermission": "Permitir que Vera use el micrófono para registrar deudas por voz.",
           "speechRecognitionPermission": "Permitir que Vera reconozca tu voz para registrar deudas."
+        }
+      ],
+      "expo-web-browser",
+      "@react-native-google-signin/google-signin",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/vera-logos/adaptive-icon.png",
+          "color": "#F05B53",
+          "defaultChannel": "deudas"
         }
       ]
     ],

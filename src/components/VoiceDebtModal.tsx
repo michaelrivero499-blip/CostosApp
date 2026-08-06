@@ -251,7 +251,7 @@ export function VoiceDebtModal({ visible, onClose, personId, personName, persons
           {/* Processing state */}
           {state === 'processing' && (
             <View style={styles.stateContainer}>
-              <ActivityIndicator size="large" color="#F05B53" style={{ marginBottom: 16 }} />
+              <ActivityIndicator size="large" color="#00C4A8" style={{ marginBottom: 16 }} />
               <Text style={styles.sheetTitle}>Interpretando...</Text>
               {transcript ? (
                 <Text style={styles.transcriptText} numberOfLines={3}>{transcript}</Text>
@@ -424,7 +424,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: '#F05B5322',
+    backgroundColor: '#00C4A822',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 20,
@@ -433,7 +433,7 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: '#F05B53',
+    backgroundColor: '#00C4A8',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -578,11 +578,11 @@ const styles = StyleSheet.create({
   },
   confirmBtn: {
     flex: 2,
-    backgroundColor: '#F05B53',
+    backgroundColor: '#00C4A8',
     borderRadius: 24,
     paddingVertical: 12,
     alignItems: 'center',
-    shadowColor: '#F05B53',
+    shadowColor: '#00C4A8',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.35,
     shadowRadius: 6,

@@ -73,3 +73,63 @@ export async function interpretDebt(
     throw new Error(`Could not parse response: ${cleaned}`);
   }
 }
+
+// ─── Transaction voice interpretation ────────────────────────────────────────
+
+export interface InterpretedTransaction {
+  type: 'income' | 'expense' | null;
+  amount: number | null;
+  category: string | null;
+  description: string | null;
+}
+
+const TX_SYSTEM_PROMPT = `Sos un asistente que interpreta frases sobre movimientos financieros personales en español. Dado un texto, extraé:
+- type: "expense" si es un gasto o pago, "income" si es un ingreso o cobro
+- amount: monto numérico (solo el número, sin símbolo de moneda)
+- category: la categoría más adecuada. Opciones para gastos: food, transport, entertainment, health, home, shopping, education, subscriptions, other_expense. Opciones para ingresos: salary, freelance, investment, gift, refund, other_income
+- description: descripción breve y clara del movimiento
+
+Ejemplos:
+- "gasté 500 en almuerzo" → {"type":"expense","amount":500,"category":"food","description":"almuerzo"}
+- "cobré el sueldo 120000" → {"type":"income","amount":120000,"category":"salary","description":"sueldo"}
+- "pagué Spotify 1200" → {"type":"expense","amount":1200,"category":"subscriptions","description":"Spotify"}
+- "me depositaron 15000 de trabajo freelance" → {"type":"income","amount":15000,"category":"freelance","description":"trabajo freelance"}
+- "taxi al trabajo 800" → {"type":"expense","amount":800,"category":"transport","description":"taxi"}
+- "compré zapatillas 30000" → {"type":"expense","amount":30000,"category":"shopping","description":"zapatillas"}
+- "cargué nafta 8000" → {"type":"expense","amount":8000,"category":"transport","description":"nafta"}
+
+Respondé SOLO con JSON válido con exactamente estos campos: {"type","amount","category","description"}. Si no podés extraer algún campo con certeza, poné null.`;
+
+export async function interpretTransaction(transcript: string): Promise<InterpretedTransaction> {
+  const apiKey = Constants.expoConfig?.extra?.claudeApiKey as string;
+  if (!apiKey) throw new Error('EXPO_PUBLIC_CLAUDE_API_KEY not set');
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 256,
+      system: TX_SYSTEM_PROMPT,
+      messages: [{ role: 'user', content: transcript }],
+    }),
+  });
+
+  if (!response.ok) {
+    const errBody = await response.text();
+    throw new Error(`Claude API ${response.status}: ${errBody}`);
+  }
+
+  const data = await response.json();
+  const raw: string = data.content?.[0]?.text ?? '';
+  const cleaned = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+  try {
+    return JSON.parse(cleaned) as InterpretedTransaction;
+  } catch {
+    throw new Error(`Could not parse response: ${cleaned}`);
+  }
+}

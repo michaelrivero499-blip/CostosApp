@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useMemo } from 'react';
-import { Animated, StyleSheet, Text, TouchableOpacity, View, Easing } from 'react-native';
+import { Animated, StyleSheet, Text, TouchableOpacity, View, Easing, Image } from 'react-native';
+import { Swipeable, RectButton } from 'react-native-gesture-handler';
 import { Person, Debt } from '../types';
 import { useTheme, Theme } from '../context/ThemeContext';
 import {
@@ -11,14 +12,17 @@ interface Props {
   person: Person;
   debts: Debt[];
   onPress: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
   isNew?: boolean;
   isExiting?: boolean;
   onExitComplete?: () => void;
 }
 
-export function PersonCard({ person, debts, onPress, isNew, isExiting, onExitComplete }: Props) {
+export function PersonCard({ person, debts, onPress, onEdit, onDelete, isNew, isExiting, onExitComplete }: Props) {
   const { theme } = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
+  const swipeableRef = useRef<Swipeable>(null);
 
   const status = getPersonStatus(debts);
   const activeCount = debts.filter(d => d.status === 'pendiente').length;
@@ -71,47 +75,82 @@ export function PersonCard({ person, debts, onPress, isNew, isExiting, onExitCom
     }
   }, [isExiting]);
 
+  function renderRightActions() {
+    return (
+      <View style={styles.swipeActions}>
+        <RectButton
+          style={[styles.swipeBtn, styles.swipeBtnEdit]}
+          onPress={() => { swipeableRef.current?.close(); onEdit?.(); }}
+        >
+          <Text style={styles.swipeBtnText}>Editar</Text>
+        </RectButton>
+        <RectButton
+          style={[styles.swipeBtn, styles.swipeBtnDelete]}
+          onPress={() => { swipeableRef.current?.close(); onDelete?.(); }}
+        >
+          <Text style={styles.swipeBtnText}>Eliminar</Text>
+        </RectButton>
+      </View>
+    );
+  }
+
   return (
-    <Animated.View style={{ opacity, transform: [{ scale }, { translateX }] }}>
-      <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
-        <View style={[styles.avatar, { backgroundColor: person.color }]}>
-          <Text style={styles.avatarEmoji}>{person.avatar}</Text>
-        </View>
-        <View style={styles.info}>
-          <Text style={styles.name}>{person.name}</Text>
-          <Text style={styles.debtsCount}>
-            {activeCount} {activeCount === 1 ? 'deuda activa' : 'deudas activas'}
-          </Text>
-        </View>
-        <View style={styles.right}>
-          <View style={styles.amountRow}>
-            <Text style={[styles.amount, { color: amountColor }]}>
-              {primaryNet
-                ? formatAmountCurrency(Math.abs(primaryNet.net), primaryNet.currency)
-                : formatAmountCurrency(0)}
+    <Animated.View style={[styles.container, { opacity, transform: [{ scale }, { translateX }] }]}>
+      <Swipeable
+        ref={swipeableRef}
+        friction={2}
+        rightThreshold={40}
+        overshootRight={false}
+        renderRightActions={onEdit || onDelete ? renderRightActions : undefined}
+      >
+        <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
+          {person.avatarUrl ? (
+            <Image source={{ uri: person.avatarUrl }} style={styles.avatar} />
+          ) : (
+            <View style={[styles.avatar, { backgroundColor: person.color }]}>
+              <Text style={styles.avatarEmoji}>{person.avatar}</Text>
+            </View>
+          )}
+          <View style={styles.info}>
+            <Text style={styles.name}>{person.name}</Text>
+            <Text style={styles.debtsCount}>
+              {activeCount === 0
+                ? 'Al día'
+                : `${activeCount} ${activeCount === 1 ? 'deuda activa' : 'deudas activas'}`}
             </Text>
-            {extraCount > 0 && (
-              <View style={styles.extraBadge}>
-                <Text style={styles.extraBadgeText}>+{extraCount}</Text>
-              </View>
-            )}
           </View>
-          {statusLabel ? (
-            <Text style={[styles.status, { color: statusColor }]}>{statusLabel}</Text>
-          ) : null}
-        </View>
-      </TouchableOpacity>
+          <View style={styles.right}>
+            <View style={styles.amountRow}>
+              <Text style={[styles.amount, { color: amountColor }]}>
+                {primaryNet
+                  ? formatAmountCurrency(Math.abs(primaryNet.net), primaryNet.currency)
+                  : formatAmountCurrency(0)}
+              </Text>
+              {extraCount > 0 && (
+                <View style={styles.extraBadge}>
+                  <Text style={styles.extraBadgeText}>+{extraCount}</Text>
+                </View>
+              )}
+            </View>
+            {statusLabel ? (
+              <Text style={[styles.status, { color: statusColor }]}>{statusLabel}</Text>
+            ) : null}
+          </View>
+        </TouchableOpacity>
+      </Swipeable>
     </Animated.View>
   );
 }
 
 function createStyles(t: Theme) {
   return StyleSheet.create({
+    container: {
+      marginHorizontal: 16,
+    },
     card: {
       backgroundColor: t.card,
       borderRadius: 12,
       padding: 14,
-      marginHorizontal: 16,
       marginBottom: 8,
       flexDirection: 'row',
       alignItems: 'center',
@@ -165,5 +204,29 @@ function createStyles(t: Theme) {
       color: t.subtext,
     },
     status: { fontSize: 12, fontWeight: '500' },
+    swipeActions: {
+      flexDirection: 'row',
+      marginBottom: 8,
+      marginLeft: -12,
+      borderTopRightRadius: 12,
+      borderBottomRightRadius: 12,
+      overflow: 'hidden',
+    },
+    swipeBtn: {
+      width: 72,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    swipeBtnEdit: {
+      backgroundColor: '#3B82F6',
+    },
+    swipeBtnDelete: {
+      backgroundColor: '#F05B53',
+    },
+    swipeBtnText: {
+      color: '#FFFFFF',
+      fontSize: 13,
+      fontWeight: '700',
+    },
   });
 }

@@ -1,25 +1,31 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Modal, View, Text, TextInput, TouchableOpacity,
   StyleSheet, ScrollView, TouchableWithoutFeedback, Keyboard,
-  Platform, KeyboardEvent, Animated,
+  Platform, KeyboardEvent, Animated, Image,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { DebtDirection, Currency } from '../types';
 import { DIRECTION_COLORS, CURRENCY_ORDER, CURRENCY_SYMBOLS } from '../utils';
 import { useTheme, Theme } from '../context/ThemeContext';
+import { DueDatePickerModal } from './DueDatePickerModal';
+import { PhotoViewerModal } from './PhotoViewerModal';
 
 interface InitialValues {
   description: string;
   amount: number;
   direction: DebtDirection;
   currency: Currency;
+  dueDate?: string;
+  notes?: string;
+  photoUrl?: string;
 }
 
 interface Props {
   visible: boolean;
   personName: string;
   onClose: () => void;
-  onSave: (description: string, amount: number, direction: DebtDirection, currency: Currency) => void;
+  onSave: (description: string, amount: number, direction: DebtDirection, currency: Currency, dueDate?: string, notes?: string, photoUri?: string) => void;
   initialValues?: InitialValues;
 }
 
@@ -31,9 +37,32 @@ export function AddDebtModal({ visible, personName, onClose, onSave, initialValu
   const [amountText, setAmountText] = useState('');
   const [direction, setDirection] = useState<DebtDirection>('me_debe');
   const [currency, setCurrency] = useState<Currency>('ARS');
+  const [dueDateText, setDueDateText] = useState('');
+  const [notes, setNotes] = useState('');
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [viewingPhoto, setViewingPhoto] = useState<string | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [keyboardHeight] = useState(new Animated.Value(0));
 
   const isEditMode = initialValues !== undefined;
+
+  function formatDateForInput(iso: string): string {
+    const d = new Date(iso);
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+  }
+
+  function parseDateInput(text: string): string | undefined {
+    const parts = text.split('/');
+    if (parts.length !== 3) return undefined;
+    const [day, month, year] = parts.map(Number);
+    if (!day || !month || !year || year < 2020) return undefined;
+    const d = new Date(year, month - 1, day);
+    if (isNaN(d.getTime())) return undefined;
+    return d.toISOString();
+  }
 
   useEffect(() => {
     if (visible && initialValues) {
@@ -41,6 +70,12 @@ export function AddDebtModal({ visible, personName, onClose, onSave, initialValu
       setAmountText(String(initialValues.amount));
       setDirection(initialValues.direction);
       setCurrency(initialValues.currency);
+      setDueDateText(initialValues.dueDate ? formatDateForInput(initialValues.dueDate) : '');
+      setNotes(initialValues.notes ?? '');
+      setPhotoUri(null);
+    } else if (!visible) {
+      setDescription(''); setAmountText(''); setDirection('me_debe');
+      setCurrency('ARS'); setDueDateText(''); setNotes(''); setPhotoUri(null);
     }
   }, [visible]);
 
@@ -64,17 +99,25 @@ export function AddDebtModal({ visible, personName, onClose, onSave, initialValu
     return () => { showSub.remove(); hideSub.remove(); };
   }, []);
 
+  async function handlePickPhoto() {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: false,
+      quality: 0.8,
+    });
+    if (!result.canceled) setPhotoUri(result.assets[0].uri);
+  }
+
   function handleSave() {
     const amount = parseFloat(amountText.replace(',', '.'));
     if (!description.trim() || isNaN(amount) || amount <= 0) return;
-    onSave(description.trim(), amount, direction, currency);
-    setDescription(''); setAmountText(''); setDirection('me_debe'); setCurrency('ARS');
+    const dueDate = dueDateText.trim() ? parseDateInput(dueDateText.trim()) : undefined;
+    onSave(description.trim(), amount, direction, currency, dueDate, notes.trim() || undefined, photoUri ?? undefined);
     onClose();
   }
 
   function handleClose() {
     Keyboard.dismiss();
-    setDescription(''); setAmountText(''); setDirection('me_debe'); setCurrency('ARS');
     onClose();
   }
 
@@ -161,6 +204,53 @@ export function AddDebtModal({ visible, personName, onClose, onSave, initialValu
                   onSubmitEditing={handleSave}
                 />
 
+                <Text style={styles.label}>Vencimiento (opcional)</Text>
+                <TouchableOpacity
+                  style={[styles.input, { justifyContent: 'center' }]}
+                  onPress={() => setShowDatePicker(true)}
+                >
+                  <Text style={{ color: dueDateText ? theme.text : placeholderColor, fontSize: 16 }}>
+                    {dueDateText || 'Seleccionar fecha'}
+                  </Text>
+                </TouchableOpacity>
+
+                <Text style={styles.label}>Notas (opcional)</Text>
+                <TextInput
+                  style={[styles.input, styles.notesInput]}
+                  placeholder="Detalles adicionales..."
+                  placeholderTextColor={placeholderColor}
+                  value={notes}
+                  onChangeText={setNotes}
+                  multiline
+                  numberOfLines={3}
+                  maxLength={300}
+                  textAlignVertical="top"
+                />
+
+                <Text style={styles.label}>Foto / Comprobante (opcional)</Text>
+                <TouchableOpacity style={styles.photoBtn} onPress={handlePickPhoto} activeOpacity={0.8}>
+                  {photoUri ? (
+                    <Image source={{ uri: photoUri }} style={styles.photoPreview} />
+                  ) : (
+                    <View style={styles.photoPlaceholder}>
+                      <Text style={styles.photoBtnIcon}>📷</Text>
+                      <Text style={styles.photoBtnText}>
+                        {initialValues?.photoUrl ? 'Cambiar foto' : 'Agregar foto'}
+                      </Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+                {photoUri && (
+                  <TouchableOpacity onPress={() => setViewingPhoto(photoUri)} style={styles.viewPhotoBtn}>
+                    <Text style={styles.viewPhotoText}>Ver foto completa</Text>
+                  </TouchableOpacity>
+                )}
+                {initialValues?.photoUrl && !photoUri && (
+                  <TouchableOpacity onPress={() => setViewingPhoto(initialValues.photoUrl!)} activeOpacity={0.85}>
+                    <Image source={{ uri: initialValues.photoUrl }} style={styles.existingPhoto} />
+                  </TouchableOpacity>
+                )}
+
                 <View style={styles.buttons}>
                   <TouchableOpacity style={styles.cancelBtn} onPress={handleClose}>
                     <Text style={styles.cancelText}>Cancelar</Text>
@@ -174,6 +264,25 @@ export function AddDebtModal({ visible, personName, onClose, onSave, initialValu
                   </TouchableOpacity>
                 </View>
               </ScrollView>
+
+              <PhotoViewerModal
+                uri={viewingPhoto}
+                onClose={() => setViewingPhoto(null)}
+              />
+
+              <DueDatePickerModal
+                visible={showDatePicker}
+                currentDate={parseDateInput(dueDateText)}
+                onConfirm={(iso) => {
+                  setDueDateText(formatDateForInput(iso));
+                  setShowDatePicker(false);
+                }}
+                onClear={() => {
+                  setDueDateText('');
+                  setShowDatePicker(false);
+                }}
+                onClose={() => setShowDatePicker(false)}
+              />
             </Animated.View>
           </TouchableWithoutFeedback>
         </View>
@@ -248,6 +357,45 @@ function createStyles(t: Theme) {
       fontSize: 16, color: t.text,
       marginBottom: 20,
     },
+    notesInput: {
+      height: 80,
+      paddingTop: 14,
+    },
+    photoBtn: {
+      marginBottom: 20,
+      borderRadius: 12,
+      overflow: 'hidden',
+    },
+    photoPlaceholder: {
+      backgroundColor: inputBg,
+      borderRadius: 12,
+      padding: 16,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+    },
+    photoBtnIcon: { fontSize: 20 },
+    photoBtnText: { fontSize: 14, color: t.subtext, fontWeight: '500' },
+    photoPreview: {
+      width: '100%',
+      height: 160,
+      borderRadius: 12,
+    },
+    existingPhoto: {
+      width: '100%',
+      height: 160,
+      borderRadius: 12,
+      marginBottom: 20,
+      marginTop: -12,
+    },
+    viewPhotoBtn: {
+      alignSelf: 'flex-end',
+      marginTop: -12,
+      marginBottom: 16,
+      paddingHorizontal: 4,
+      paddingVertical: 4,
+    },
+    viewPhotoText: { fontSize: 12, color: t.subtext, fontWeight: '500' },
     buttons: { flexDirection: 'row', gap: 12, marginBottom: 8 },
     cancelBtn: {
       flex: 1, backgroundColor: inputBg,
@@ -255,7 +403,7 @@ function createStyles(t: Theme) {
     },
     cancelText: { fontSize: 16, fontWeight: '600', color: t.subtext },
     saveBtn: {
-      flex: 1, backgroundColor: '#F05B53',
+      flex: 1, backgroundColor: '#00C4A8',
       borderRadius: 14, padding: 16, alignItems: 'center',
     },
     saveBtnDisabled: { opacity: 0.4 },

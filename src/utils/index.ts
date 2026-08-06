@@ -64,16 +64,22 @@ export function formatAmountShortCurrency(amount: number, currency: Currency = '
 
 // ── Debt calculations ─────────────────────────────────────────────────────────
 
+// Monto efectivo pendiente de cobro/pago (descuenta pagos parciales)
+export function effectiveAmount(debt: Debt): number {
+  if (debt.status === 'pagado') return debt.amount;
+  return debt.amount - (debt.paidAmount ?? 0);
+}
+
 export function getPersonMeDebe(debts: Debt[]): number {
   return debts
     .filter(d => d.status === 'pendiente' && d.direction === 'me_debe')
-    .reduce((sum, d) => sum + d.amount, 0);
+    .reduce((sum, d) => sum + effectiveAmount(d), 0);
 }
 
 export function getPersonLeDebo(debts: Debt[]): number {
   return debts
     .filter(d => d.status === 'pendiente' && d.direction === 'le_debo')
-    .reduce((sum, d) => sum + d.amount, 0);
+    .reduce((sum, d) => sum + effectiveAmount(d), 0);
 }
 
 export function getPersonNet(debts: Debt[]): number {
@@ -95,7 +101,7 @@ export function getPersonNetByCurrency(debts: Debt[]): { currency: Currency; net
     .filter(d => d.status === 'pendiente')
     .forEach(d => {
       const c = (d.currency ?? 'ARS') as Currency;
-      totals[c] += d.direction === 'me_debe' ? d.amount : -d.amount;
+      totals[c] += d.direction === 'me_debe' ? effectiveAmount(d) : -effectiveAmount(d);
     });
   return CURRENCY_ORDER
     .filter(c => totals[c] !== 0)
@@ -110,8 +116,8 @@ export const STATUS_COLORS: Record<DebtStatus, string> = {
 };
 
 export const DIRECTION_COLORS: Record<DebtDirection, string> = {
-  me_debe: '#F05B53',
-  le_debo: '#5E60CE',
+  me_debe: '#34C759',  // verde — me deben = dinero positivo
+  le_debo: '#F05B53',  // rojo  — le debo  = dinero negativo
 };
 
 // ── Avatar options ────────────────────────────────────────────────────────────
