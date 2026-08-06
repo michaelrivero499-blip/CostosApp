@@ -22,30 +22,38 @@ jobs:
   backup:
     runs-on: ubuntu-latest
     steps:
-      - name: Instalar pg_dump 17
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq postgresql-common
-          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
-          sudo apt-get install -y -qq postgresql-client-17
-          pg_dump --version
-
       - name: Dump de la base
         env:
           DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: |
+          set -e
           stamp=$(date -u +"%Y-%m-%d")
 
-          # public  = persons, debts, transactions, budgets (los datos)
-          # auth    = las cuentas de usuario. Sin esto tendrias las deudas
-          #           pero nadie a quien pertenecen, y el backup no sirve.
-          pg_dump "$DB_URL" \
-            --schema=public \
-            --schema=auth \
-            --no-owner \
-            --no-privileges \
-            --format=custom \
-            --file="vera-backup-$stamp.dump"
+          # pg_dump se niega a dumpear un servidor mas nuevo que el, y el
+          # postgresql-client que trae Ubuntu va siempre atrasado respecto de
+          # Supabase. Usamos la imagen oficial de Postgres para tener la
+          # version exacta y no depender de lo que traiga el runner.
+          #
+          # Supabase corre PostgreSQL 17.x. Si algun dia actualizan a 18 y
+          # este job empieza a fallar con "server version mismatch", subi el
+          # tag de la imagen. El error te va a decir que version necesitas.
+          PG_IMAGE=postgres:17-alpine
+
+          # --user para que el .dump quede a nombre del runner y no de root,
+          # si no upload-artifact despues no lo puede leer.
+          docker run --rm \
+            --user "$(id -u):$(id -g)" \
+            -e DB_URL \
+            -v "$PWD:/backup" \
+            -w /backup \
+            "$PG_IMAGE" \
+            pg_dump "$DB_URL" \
+              --schema=public \
+              --schema=auth \
+              --no-owner \
+              --no-privileges \
+              --format=custom \
+              --file="vera-backup-$stamp.dump"
 
           ls -lh "vera-backup-$stamp.dump"
 
