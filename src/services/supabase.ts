@@ -1,17 +1,27 @@
 import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
-import Constants from 'expo-constants';
 
-// Doble fallback: app.config.js ya inyecta la key vía extra; el fallback
-// directo aquí garantiza que el cliente siempre se inicialice en producción.
-const FALLBACK_URL     = 'https://mippjtmsrvjxyccmvpzl.supabase.co';
-const FALLBACK_KEY     = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1pcHBqdG1zcnZqeHljY212cHpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxOTc1MDcsImV4cCI6MjA5Mzc3MzUwN30.kgvaK7NlhlRgAkpfNFsrd4yohR1rYgRHT8o5wQCeEtA';
+// ── Configuración de Supabase ────────────────────────────────────────────────
+//
+// Ambos valores están hardcodeados a propósito, no es un descuido.
+//
+// La publishable key está diseñada para viajar en el cliente: no otorga ningún
+// acceso por sí sola, lo que protege los datos es Row Level Security. Es el
+// equivalente de la anon key legacy, pero no es un JWT, así que tampoco
+// dispara los escáneres de secretos de GitHub.
+//
+// Tenerlos acá elimina toda la clase de bugs de BUG-005: ya no dependen de
+// variables de entorno que pueden llegar undefined en un build de EAS.
+//
+// Lo que NUNCA va acá: la secret key (sb_secret_...), que sí bypassea RLS.
+// Esa vive solo en las variables de entorno de las Edge Functions.
 
-const supabaseUrl     = (Constants.expoConfig?.extra?.supabaseUrl     as string | undefined) ?? FALLBACK_URL;
-const supabaseAnonKey = (Constants.expoConfig?.extra?.supabaseAnonKey as string | undefined) ?? FALLBACK_KEY;
+export const SUPABASE_URL = 'https://mippjtmsrvjxyccmvpzl.supabase.co';
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_ea-vKqJxVY9wslUBzuQMvg_v4HIexeY';
+
+export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     storage: AsyncStorage,
     autoRefreshToken: true,

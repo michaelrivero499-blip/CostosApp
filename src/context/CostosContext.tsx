@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { View } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
 import { Person, Debt, DebtStatus, DebtDirection, Currency } from '../types';
-import { supabase } from '../services/supabase';
+import { supabase, SUPABASE_URL } from '../services/supabase';
 import { useAuth } from './AuthContext';
 import { generateUUID } from '../utils';
 import { createStorage } from '../storage';
@@ -30,8 +30,6 @@ interface CostosContextType {
 }
 
 const CostosContext = createContext<CostosContextType | null>(null);
-
-const SUPABASE_URL = 'https://mippjtmsrvjxyccmvpzl.supabase.co';
 
 function isOfflineError(message: string): boolean {
   const msg = String(message).toLowerCase();

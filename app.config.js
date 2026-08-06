@@ -1,13 +1,16 @@
+// La URL y la publishable key de Supabase ya no se inyectan por acá: viven
+// hardcodeadas en src/services/supabase.ts, que es donde corresponde para una
+// key pública. Eso elimina la dependencia de variables de entorno de EAS que
+// causaba BUG-005 ("Invalid API key" en el APK preview).
+//
+// La API key de Claude sí es un secreto real y sigue viniendo del entorno.
+// TODO (Fase 1): moverla a una Edge Function. Hoy viaja dentro del APK y
+// cualquiera puede extraerla con un proxy.
+
 module.exports = ({ config }) => ({
   ...config,
   extra: {
     ...config.extra,
-    supabaseUrl:
-      process.env.EXPO_PUBLIC_SUPABASE_URL ??
-      'https://mippjtmsrvjxyccmvpzl.supabase.co',
-    supabaseAnonKey:
-      process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ??
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1pcHBqdG1zcnZqeHljY212cHpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxOTc1MDcsImV4cCI6MjA5Mzc3MzUwN30.kgvaK7NlhlRgAkpfNFsrd4yohR1rYgRHT8o5wQCeEtA',
     claudeApiKey: process.env.EXPO_PUBLIC_CLAUDE_API_KEY,
   },
 });
