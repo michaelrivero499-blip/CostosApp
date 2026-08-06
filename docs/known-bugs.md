@@ -20,7 +20,7 @@ Cada bug incluye: descripción, estado, y contexto para reproducirlo.
 **Resuelto:** 2026-05-19  
 **Descripción:** El APK generado con el perfil EAS `preview` fallaba al autenticarse con Supabase.  
 **Fix:** Doble fallback implementado en `src/services/supabase.ts` — si `Constants.expoConfig?.extra` llega undefined en algún build, las constantes `FALLBACK_URL` y `FALLBACK_KEY` garantizan que el cliente Supabase siempre se inicialice correctamente. El fallback ya existía en `app.config.js`; ahora también está en el punto de consumo.  
-**Impacto:** Resuelto — la anon key nunca será undefined en producción.
+**Causa raíz eliminada (2026-08-05, sesión 15):** el doble fallback era un parche sobre el síntoma. La razón por la que la key venía de una variable de entorno era que GitHub bloqueaba hardcodear el JWT de la anon key. Con la migración a publishable key (que no es un JWT y no dispara los escáneres de secretos), la key pasó a ser una constante en `supabase.ts` y `app.config.js` dejó de inyectarla. Ya no existe la variable de entorno que podía llegar undefined, así que la clase entera de bug desapareció.
 
 ---
 
